@@ -1,4 +1,6 @@
+using Application.Common.Interfaces;
 using Domain.Interfaces;
+using Infrastructure.Logging;
 using Infrastructure.Options;
 using Infrastructure.Persistence.Models;
 using Infrastructure.Persistence.Repositories;
@@ -48,6 +50,8 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IApiKeyRepository, ApiKeyRepository>();
+
+        services.AddScoped<ICorrelationIdService, CorrelationIdService>();
 
         return services;
     }
