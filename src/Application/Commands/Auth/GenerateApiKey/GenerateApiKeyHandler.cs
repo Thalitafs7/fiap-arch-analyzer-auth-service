@@ -1,3 +1,5 @@
+using Application.Common.Handlers;
+using Application.Common.Interfaces;
 using Application.DTOs;
 using Domain.Entities;
 using Domain.Interfaces;
@@ -6,22 +8,40 @@ using System.Security.Cryptography;
 
 namespace Application.Commands.Auth.GenerateApiKey;
 
-public class GenerateApiKeyHandler(IApiKeyRepository apiKeyRepository) : IRequestHandler<GenerateApiKeyCommand, GenerateApiKeyResponse>
+public class GenerateApiKeyHandler(
+    IApiKeyRepository apiKeyRepository,
+    ILogService<GenerateApiKeyHandler> logService) : HandlerBase<GenerateApiKeyHandler>(logService), IRequestHandler<GenerateApiKeyCommand, GenerateApiKeyResponse>
 {
     public async Task<GenerateApiKeyResponse> Handle(
-        GenerateApiKeyCommand request, 
+        GenerateApiKeyCommand command,
         CancellationToken cancellationToken)
     {
-        var apiKey = new ApiKey
+        const string method = nameof(Handle);
+
+        try
         {
-            Key = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
-            CreatedAt = DateTime.UtcNow,
-            Revoked = false
-        };
+            LogInicio(method, command);
 
-        var createdApiKey = await apiKeyRepository
-            .CreateAsync(apiKey, cancellationToken);
+            var apiKey = new ApiKey
+            {
+                Key = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
+                CreatedAt = DateTime.UtcNow,
+                Revoked = false
+            };
 
-        return new GenerateApiKeyResponse(createdApiKey.Key);
+            var createdApiKey = await apiKeyRepository
+                .CreateAsync(apiKey, cancellationToken);
+
+            var result = new GenerateApiKeyResponse(createdApiKey.Key);
+
+            LogFim(method, result);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            LogErro(method, ex);
+            throw;
+        }
     }
 }

@@ -1,12 +1,21 @@
 using Application.Commands.Auth.GenerateApiKey;
+using Application.Common.Interfaces;
 using Application.Queries.Auth.ValidateApiKey;
 using Domain.Entities;
 using Domain.Interfaces;
+using NSubstitute;
 
 namespace UnitTests;
 
 public class AuthHandlersTests
 {
+    private readonly ILogService<ValidateApiKeyHandler> _logService;
+
+    public AuthHandlersTests()
+    {
+        _logService = Substitute.For<ILogService<ValidateApiKeyHandler>>();
+    }
+
     [Fact]
     public async Task ValidateApiKeyHandler_ShouldReturnResponse_WhenApiKeyIsValid()
     {
@@ -20,7 +29,7 @@ public class AuthHandlersTests
             }
         ]);
 
-        var handler = new ValidateApiKeyHandler(repository);
+        var handler = new ValidateApiKeyHandler(repository, _logService);
 
         var response = await handler.Handle(new ValidateApiKeyQuery("valid-api-key"), CancellationToken.None);
 
@@ -41,7 +50,7 @@ public class AuthHandlersTests
             }
         ]);
 
-        var handler = new ValidateApiKeyHandler(repository);
+        var handler = new ValidateApiKeyHandler(repository, _logService);
 
         var response = await handler.Handle(new ValidateApiKeyQuery("revoked-api-key"), CancellationToken.None);
 
@@ -52,7 +61,9 @@ public class AuthHandlersTests
     public async Task GenerateApiKeyHandler_ShouldPersistAndReturnGeneratedApiKey()
     {
         var repository = new FakeApiKeyRepository([]);
-        var handler = new GenerateApiKeyHandler(repository);
+        var logService = Substitute.For<ILogService<GenerateApiKeyHandler>>();
+
+        var handler = new GenerateApiKeyHandler(repository, logService);
 
         var response = await handler.Handle(new GenerateApiKeyCommand(), CancellationToken.None);
 

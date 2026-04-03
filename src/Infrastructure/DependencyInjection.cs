@@ -4,6 +4,7 @@ using Infrastructure.Logging;
 using Infrastructure.Options;
 using Infrastructure.Persistence.Models;
 using Infrastructure.Persistence.Repositories;
+using Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -52,6 +53,9 @@ public static class DependencyInjection
         services.AddScoped<IApiKeyRepository, ApiKeyRepository>();
 
         services.AddScoped<ICorrelationIdService, CorrelationIdService>();
+        services.AddScoped(typeof(ILogService<>), typeof(LogService<>));
+
+        services.AddScoped<ICurrentApiKeyService, CurrentApiKeyService>();
 
         return services;
     }
