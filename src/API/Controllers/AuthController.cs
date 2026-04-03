@@ -1,5 +1,6 @@
 using Application.Commands.Auth.GenerateApiKey;
 using Application.Queries.Auth.ValidateApiKey;
+using Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,8 +30,13 @@ public class AuthController(IMediator mediator) : ControllerBase
     [HttpPost("apikey")]
     public async Task<IActionResult> GenerateApiKey(CancellationToken cancellationToken)
     {
+        var internalKey = Request.Headers["x-internal-key"].FirstOrDefault();
+
+        if (string.IsNullOrWhiteSpace(internalKey))
+            return Unauthorized(new { message = "x-internal-key não fornecida" });
+
         var response = await mediator
-            .Send(new GenerateApiKeyCommand(), cancellationToken);
+            .Send(new GenerateApiKeyCommand(internalKey), cancellationToken);
         
         return Ok(response);
     }

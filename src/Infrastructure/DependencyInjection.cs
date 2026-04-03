@@ -1,4 +1,4 @@
-using Application.Common.Interfaces;
+Ôªøusing Application.Common.Interfaces;
 using Domain.Interfaces;
 using Infrastructure.Logging;
 using Infrastructure.Options;
@@ -16,6 +16,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<SecuritySettings>(configuration.GetSection("Security"));
         services.Configure<MongoDbSettings>(configuration.GetSection(MongoDbSettings.SectionName));
 
         services.AddSingleton<IMongoClient>(serviceProvider =>
@@ -23,7 +24,7 @@ public static class DependencyInjection
             var settings = serviceProvider.GetRequiredService<IOptions<MongoDbSettings>>().Value;
 
             if (string.IsNullOrWhiteSpace(settings.ConnectionString))
-                throw new InvalidOperationException("MongoDb:ConnectionString n„o configurada.");
+                throw new InvalidOperationException("MongoDb:ConnectionString n√£o configurada.");
 
             return new MongoClient(settings.ConnectionString);
         });
@@ -34,7 +35,7 @@ public static class DependencyInjection
             var client = serviceProvider.GetRequiredService<IMongoClient>();
 
             if (string.IsNullOrWhiteSpace(settings.DatabaseName))
-                throw new InvalidOperationException("MongoDb:DatabaseName n„o configurado.");
+                throw new InvalidOperationException("MongoDb:DatabaseName n√£o configurado.");
 
             return client.GetDatabase(settings.DatabaseName);
         });
@@ -45,7 +46,7 @@ public static class DependencyInjection
             var database = serviceProvider.GetRequiredService<IMongoDatabase>();
 
             if (string.IsNullOrWhiteSpace(settings.ApiKeysCollectionName))
-                throw new InvalidOperationException("MongoDb:ApiKeysCollectionName n„o configurado.");
+                throw new InvalidOperationException("MongoDb:ApiKeysCollectionName n√£o configurado.");
 
             return database.GetCollection<ApiKeyDocument>(settings.ApiKeysCollectionName);
         });
@@ -56,6 +57,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(ILogService<>), typeof(LogService<>));
 
         services.AddScoped<ICurrentApiKeyService, CurrentApiKeyService>();
+        services.AddScoped<IInternalKeyValidator, InternalKeyValidator>();
 
         return services;
     }

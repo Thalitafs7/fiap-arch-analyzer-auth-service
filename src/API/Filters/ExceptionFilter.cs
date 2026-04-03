@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
-using FluentValidation;
+﻿using Application.Common.Exceptions;
 using Domain.Exceptions;
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace API.Filters
 {
@@ -19,19 +20,15 @@ namespace API.Filters
                     {
                         message = "Erro de validação",
                         errors = validationEx.Errors.Select(e => new { field = e.PropertyName, error = e.ErrorMessage })
-                    } as object
+                    }
+                ),
+                UnauthorizedException unauthorizedException => (
+                    StatusCodes.Status401Unauthorized,
+                    new { message = unauthorizedException.Message }
                 ),
                 DomainException domainEx => (
                     StatusCodes.Status400BadRequest,
-                    new { message = domainEx.Message } as object
-                ),
-                InvalidOperationException invalidOpEx => (
-                    StatusCodes.Status400BadRequest,
-                    new { message = invalidOpEx.Message } as object
-                ),
-                KeyNotFoundException notFoundEx => (
-                    StatusCodes.Status404NotFound,
-                    new { message = notFoundEx.Message } as object
+                    new { message = domainEx.Message }
                 ),
                 _ => (
                     StatusCodes.Status500InternalServerError,
@@ -45,6 +42,7 @@ namespace API.Filters
             }
 
             context.Result = new ObjectResult(message) { StatusCode = statusCode };
+
             context.ExceptionHandled = true;
         }
     }

@@ -1,4 +1,5 @@
 using Application.Commands.Auth.GenerateApiKey;
+using Application.Common.Exceptions;
 using Application.Common.Interfaces;
 using Application.Queries.Auth.ValidateApiKey;
 using Domain.Entities;
@@ -62,16 +63,31 @@ public class AuthHandlersTests
     {
         var repository = new FakeApiKeyRepository([]);
         var logService = Substitute.For<ILogService<GenerateApiKeyHandler>>();
+        var internalKeyValidator = Substitute.For<IInternalKeyValidator>();
+        internalKeyValidator.IsValid("admin123").Returns(true);
 
-        var handler = new GenerateApiKeyHandler(repository, logService);
+        var handler = new GenerateApiKeyHandler(repository, internalKeyValidator, logService);
 
-        var response = await handler.Handle(new GenerateApiKeyCommand(), CancellationToken.None);
+        var response = await handler.Handle(new GenerateApiKeyCommand("admin123"), CancellationToken.None);
 
         Assert.False(string.IsNullOrWhiteSpace(response.ApiKey));
         Assert.Equal(64, response.ApiKey.Length);
         Assert.Single(repository.Items);
         Assert.Equal(response.ApiKey, repository.Items[0].Key);
         Assert.False(repository.Items[0].Revoked);
+    }
+
+    [Fact]
+    public async Task GenerateApiKeyHandler_ShouldThrowUnauthorized_WhenInternalKeyIsInvalid()
+    {
+        var repository = new FakeApiKeyRepository([]);
+        var logService = Substitute.For<ILogService<GenerateApiKeyHandler>>();
+        var internalKeyValidator = Substitute.For<IInternalKeyValidator>();
+        internalKeyValidator.IsValid("invalid").Returns(false);
+
+        var handler = new GenerateApiKeyHandler(repository, internalKeyValidator, logService);
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() => handler.Handle(new GenerateApiKeyCommand("invalid"), CancellationToken.None));
     }
 
     private sealed class FakeApiKeyRepository(List<ApiKey> items) : IApiKeyRepository

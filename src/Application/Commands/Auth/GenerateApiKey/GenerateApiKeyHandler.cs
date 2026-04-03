@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Handlers;
 using Application.Common.Interfaces;
 using Application.DTOs;
@@ -10,6 +11,7 @@ namespace Application.Commands.Auth.GenerateApiKey;
 
 public class GenerateApiKeyHandler(
     IApiKeyRepository apiKeyRepository,
+    IInternalKeyValidator internalKeyValidator,
     ILogService<GenerateApiKeyHandler> logService) : HandlerBase<GenerateApiKeyHandler>(logService), IRequestHandler<GenerateApiKeyCommand, GenerateApiKeyResponse>
 {
     public async Task<GenerateApiKeyResponse> Handle(
@@ -21,6 +23,9 @@ public class GenerateApiKeyHandler(
         try
         {
             LogInicio(method, command);
+
+            if (!internalKeyValidator.IsValid(command.XInternalKey))
+                throw new UnauthorizedException();
 
             var apiKey = new ApiKey
             {
