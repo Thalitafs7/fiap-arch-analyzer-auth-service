@@ -1,4 +1,4 @@
-using API.Filters;
+ï»¿using API.Filters;
 using API.Middlewares;
 using Application;
 using Infrastructure;
@@ -32,7 +32,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "MS Auth API",
         Version = "v1",
-        Description = "Microserviço de Autenticação - Arch Analyzer"
+        Description = "MicroserviÃ§o de AutenticaÃ§Ã£o - Arch Analyzer"
     });
 });
 
@@ -93,3 +93,6 @@ app.MapControllers();
 app.MapHealthChecks("/health");
 
 app.Run();
+
+public partial class Program;
+
