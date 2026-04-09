@@ -30,7 +30,6 @@ public class GenerateApiKeyHandler(
             var apiKey = new ApiKey
             {
                 Key = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
-                CreatedAt = DateTime.UtcNow,
                 Revoked = false
             };
 

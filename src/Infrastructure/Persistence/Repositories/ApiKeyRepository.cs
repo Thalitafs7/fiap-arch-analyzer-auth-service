@@ -40,9 +40,7 @@ public class ApiKeyRepository(IMongoCollection<ApiKeyDocument> collection) : IAp
     {
         return new ApiKey
         {
-            Id = document.Id,
             Key = document.ApiKey,
-            CreatedAt = document.CreatedAt,
             Revoked = document.Revoked
         };
     }
