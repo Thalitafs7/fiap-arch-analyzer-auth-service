@@ -100,3 +100,9 @@ Migrations/
 
 *.tmp
 *.temp
+
+# =========================
+# K8S
+# =========================
+/k8s/secrets.yaml
+/k8s/MongoDb/mongodb-secrets.yaml

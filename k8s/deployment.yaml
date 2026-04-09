@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-auth-api
+  namespace: auth
+  labels:
+    app: ms-auth-api
+    tags.datadoghq.com/env: "production"
+    tags.datadoghq.com/service: "ms-auth-api"
+    tags.datadoghq.com/version: "1.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ms-auth-api
+  template:
+    metadata:
+      labels:
+        app: ms-auth-api
+        tags.datadoghq.com/env: "production"
+        tags.datadoghq.com/service: "ms-auth-api"
+        tags.datadoghq.com/version: "1.0.0"
+      annotations:
+        admission.datadoghq.com/enabled: "true"
+        admission.datadoghq.com/dotnet-lib.version: "latest"
+        ad.datadoghq.com/ms-auth-api.logs: '[{"source": "csharp", "service": "ms-auth-api"}]'
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: ms-auth-api
+        image: fthalita91/ms-auth:latest
+        ports:
+        - containerPort: 5002
+
+        envFrom:
+          - configMapRef:
+              name: ms-auth-config
+          - secretRef:
+              name: ms-auth-secret
+          - secretRef:
+              name: aws-credentials
+              optional: true
+
+        env:
+          - name: DD_TRACE_DEBUG
+            value: "true"
+          - name: DD_AGENT_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: DD_TRACE_AGENT_PORT
+            value: "8126"
+          - name: DD_TRACE_TRANSPORT
+            value: "DatadogTcp"
+          - name: DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED
+            value: "true"
+          - name: DD_TRACE_GENERATION_128_BIT_ENABLED
+            value: "true"
+          - name: DD_LOGS_INJECTION
+            value: "true"
+          - name: DD_ENV
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['tags.datadoghq.com/env']
+          - name: DD_SERVICE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['tags.datadoghq.com/service']
+          - name: DD_VERSION
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['tags.datadoghq.com/version']
+          - name: DD_ENTITY_ID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.uid
+
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 5
+          periodSeconds: 5
