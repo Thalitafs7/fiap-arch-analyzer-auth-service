@@ -1,6 +1,6 @@
 using Application.Commands.Auth.GenerateApiKey;
+using Application.Common.Constants;
 using Application.Queries.Auth.ValidateApiKey;
-using Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,28 +12,28 @@ public class AuthController(IMediator mediator) : ControllerBase
 {
     [HttpPost("validate")]
     public async Task<IActionResult> Validate(
-        [FromHeader(Name = "x-api-key")] string apiKey,
+        [FromHeader(Name = HeaderNames.ApiKey)] string apiKey,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(apiKey))
-            return Unauthorized(new { message = "API Key n„o fornecida" });
+            return Unauthorized(new { message = "API Key n√£o fornecida" });
 
         var response = await mediator
             .Send(new ValidateApiKeyQuery(apiKey), cancellationToken);
 
         if (response is null)
-            return Unauthorized(new { message = "API Key inv·lida." });
+            return Unauthorized(new { message = "API Key inv√°lida." });
 
         return Ok(response);
     }
 
     [HttpPost("apikey")]
     public async Task<IActionResult> GenerateApiKey(
-        [FromHeader(Name = "x-internal-key")] string internalKey,
+        [FromHeader(Name = HeaderNames.InternalKey)] string internalKey,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(internalKey))
-            return Unauthorized(new { message = "x-internal-key n„o fornecida" });
+            return Unauthorized(new { message = $"{HeaderNames.InternalKey} n√£o fornecida" });
 
         var response = await mediator
             .Send(new GenerateApiKeyCommand(internalKey), cancellationToken);

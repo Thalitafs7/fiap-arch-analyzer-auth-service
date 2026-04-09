@@ -1,9 +1,13 @@
-﻿using Application.Common.Interfaces;
+using Application.Common.Constants;
+using Application.Common.Interfaces;
+using Microsoft.AspNetCore.Http;
 
-namespace Infrastructure.Services
+namespace Infrastructure.Services;
+
+public class CurrentApiKeyService(IHttpContextAccessor httpContextAccessor) : ICurrentApiKeyService
 {
-    public class CurrentApiKeyService : ICurrentApiKeyService
-    {
-        public string? ApiKey => "TODO: implementar";
-    }
+    public string? ApiKey => httpContextAccessor.HttpContext?
+        .Request
+        .Headers[HeaderNames.ApiKey]
+        .FirstOrDefault();
 }
