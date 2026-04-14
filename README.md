@@ -18,7 +18,7 @@ Serviço de autenticação e autorização para o projeto **Arch Analyzer**. Con
 │  │  K8s Namespace: arch-analyzer-api                              │ │
 │  │  ┌───────────────────────────┐                                 │ │
 │  │  │ MS Auth API (Pod)         │ ← Autenticação / Autorização    │ │
-│  │  │ - .NET 8                  │   (Geração de JWT, API Keys)    │ │
+│  │  │ - .NET 8                  │   (Geração de API Keys)    │ │
 │  │  │ - Serilog (Logs)          │                                 │ │
 │  │  └─────────┬─────────────────┘                                 │ │
 │  │            │                                                   │ │
@@ -33,7 +33,7 @@ Serviço de autenticação e autorização para o projeto **Arch Analyzer**. Con
 
 ## Fluxo da Aplicação
 
-1. **Geração de Tokens** → Cliente solicita autenticação → Auth API valida credenciais/chaves → Gera Token JWT.
+1. **Geração de Tokens** → Cliente solicita autenticação → Auth API valida credenciais/chaves → Gera API Key.
 2. **Validação de Acesso** → Outros microsserviços (ex: IA Service) validam tokens emitidos via Middleware de Autorização.
 3. **Gestão de API Keys** → Coleção `apiKeys` no MongoDB armazena chaves de acesso.
 4. **Logs** → Serilog estruturado em JSON captura eventos com CorrelationId para rastreabilidade.
