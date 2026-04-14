@@ -47,14 +47,14 @@ jobs:
               /k:"Thalitafs7_fiap-arch-analyzer-auth-service" `
               /o:"thalitafs7" `
               /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
-              /d:sonar.cs.opencover.reportsPaths="**/TestResults/coverage.opencover.xml" \
+              /d:sonar.cs.opencover.reportsPaths="**/TestResults/coverage.opencover.xml" `
               /d:sonar.coverage.exclusions="**Test*.cs"
 
             dotnet build
 
-            dotnet test --no-build \
-              /p:CollectCoverage=true \
-              /p:CoverletOutputFormat=opencover \
+            dotnet test --no-build `
+              /p:CollectCoverage=true `
+              /p:CoverletOutputFormat=opencover `
               /p:CoverletOutput=./TestResults/coverage.opencover.xml
 
             ${{ runner.temp }}\scanner\dotnet-sonarscanner end `
