@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  ms-auth-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ms-auth-api
+    ports:
+      - "5002:5002"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MongoDb__ConnectionString=mongodb://mongo:27017
+      - MongoDb__DatabaseName=auth_db
+      - MongoDb__ApiKeysCollectionName=apiKeys
+      - Security__XInternalKey=${X_INTERNAL_KEY:-admin123}
+    depends_on:
+      mongo:
+        condition: service_started
+    networks:
+      - mecanicaos-network
+
+  mongo:
+    image: mongo:7
+    container_name: ms-auth-mongo
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-auth-data:/data/db
+    networks:
+      - mecanicaos-network
+
+volumes:
+  mongo-auth-data:
+
+networks:
+  mecanicaos-network:
+    driver: bridge

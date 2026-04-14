@@ -1,0 +1,112 @@
+# =========================
+# Build / Output
+# =========================
+
+bin/
+obj/
+out/
+
+# =========================
+# User-specific files
+# =========================
+
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# =========================
+# Logs
+# =========================
+
+*.log
+logs/
+
+# =========================
+# VS Code
+# =========================
+
+.vscode/
+
+# =========================
+# Visual Studio
+# =========================
+
+.vs/
+
+# =========================
+# Rider / JetBrains
+# =========================
+
+.idea/
+
+# =========================
+# OS files
+# =========================
+
+.DS_Store
+Thumbs.db
+
+# =========================
+# Environment variables
+# =========================
+
+.env
+.env.*
+
+# =========================
+# Secrets / configs
+# =========================
+
+appsettings.Development.json
+appsettings.Local.json
+
+# =========================
+# Test results
+# =========================
+
+TestResults/
+coverage/
+
+# =========================
+# NuGet
+# =========================
+
+*.nupkg
+*.snupkg
+packages/
+
+# =========================
+# Docker
+# =========================
+
+docker-compose.override.yml
+
+# =========================
+# Publish
+# =========================
+
+publish/
+
+# =========================
+# Entity Framework
+# =========================
+
+Migrations/
+
+# =========================
+# Temporary files
+# =========================
+
+*.tmp
+*.temp
+
+# =========================
+# K8S
+# =========================
+/k8s/secrets.yaml
+/k8s/MongoDb/mongodb-secrets.yaml
+
+# SonarCloud/SonarQube temp folders
+.sonar/
+.sonarqube/
