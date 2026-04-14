@@ -110,3 +110,4 @@ Migrations/
 # SonarCloud/SonarQube temp folders
 .sonar/
 .sonarqube/
+/tests/UnitTests/coverage.opencover.xml
