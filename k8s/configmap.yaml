@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ms-auth-config
+  namespace: auth
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+
+  # MongoDB
+  MongoDb__DatabaseName: "auth_db"
+  MongoDb__ApiKeysCollectionName: "apiKeys"
+
+  Logging__LogLevel__Microsoft.AspNetCore: "Information"
