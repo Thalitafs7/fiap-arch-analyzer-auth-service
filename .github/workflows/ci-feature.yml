@@ -1,0 +1,63 @@
+name: CI Feature Branch
+
+on:
+  push:
+    branches:
+      - 'feature/*'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  test-and-pr:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Run Tests
+        run: ./.github/scripts/check_test_success.sh
+
+      - name: Ensure Develop Branch Exists
+        run: |
+          if ! git rev-parse --verify origin/develop >/dev/null 2>&1; then
+            echo "Branch develop does not exist. Creating it from main..."
+            git checkout main
+            git push origin main:develop
+            git checkout ${{ github.ref_name }}
+          else
+            echo "Branch develop already exists."
+          fi
+
+      - name: Create Pull Request to Develop
+        run: |
+          # Check for commits between feature branch and develop
+          COMMITS_COUNT=$(git rev-list --count origin/develop..HEAD)
+
+          if [ "$COMMITS_COUNT" -eq 0 ]; then
+            echo "No new commits between ${{ github.ref_name }} and develop. Skipping PR creation."
+            exit 0
+          fi
+
+          # Check if PR already exists
+          PR_EXISTS=$(gh pr list --head "${{ github.ref_name }}" --base develop --json number --jq 'length > 0')
+
+          if [ "$PR_EXISTS" = "false" ]; then
+            gh pr create \
+              --title "Merge ${{ github.ref_name }} into develop" \
+              --body "Automated PR from feature branch to develop after successful CI." \
+              --base develop \
+              --head "${{ github.ref_name }}"
+          else
+            echo "PR already exists for ${{ github.ref_name }} to develop."
+          fi
