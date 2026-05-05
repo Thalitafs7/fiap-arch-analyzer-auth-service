@@ -75,19 +75,17 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Create release branch from main if it doesn't exist
+          git fetch origin main
           if ! git rev-parse --verify "origin/$RELEASE_BRANCH" >/dev/null 2>&1; then
             echo "Creating release branch $RELEASE_BRANCH from main..."
-            git fetch origin main
-            git checkout main
-            git checkout -b "$RELEASE_BRANCH"
-            git push origin "$RELEASE_BRANCH"
-            git checkout develop
+            git push origin origin/main:refs/heads/"$RELEASE_BRANCH"
           else
             echo "Release branch $RELEASE_BRANCH already exists."
           fi
+          git fetch origin "$RELEASE_BRANCH"
 
           # Check for commits between develop and release branch
-          COMMITS_COUNT=$(git rev-list --count "origin/$RELEASE_BRANCH..HEAD")
+          COMMITS_COUNT=$(git rev-list --count origin/"$RELEASE_BRANCH"..HEAD)
 
           if [ "$COMMITS_COUNT" -eq 0 ]; then
             echo "No new commits between develop and $RELEASE_BRANCH. Skipping PR creation."

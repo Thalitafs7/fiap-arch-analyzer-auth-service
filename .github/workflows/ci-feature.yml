@@ -30,18 +30,19 @@ jobs:
 
       - name: Ensure Develop Branch Exists
         run: |
+          git fetch origin main
           if ! git rev-parse --verify origin/develop >/dev/null 2>&1; then
             echo "Branch develop does not exist. Creating it from main..."
-            git checkout main
-            git push origin main:develop
-            git checkout ${{ github.ref_name }}
+            git push origin origin/main:refs/heads/develop
           else
             echo "Branch develop already exists."
           fi
+          git fetch origin develop
 
       - name: Create Pull Request to Develop
         run: |
           # Check for commits between feature branch and develop
+          git fetch origin develop
           COMMITS_COUNT=$(git rev-list --count origin/develop..HEAD)
 
           if [ "$COMMITS_COUNT" -eq 0 ]; then

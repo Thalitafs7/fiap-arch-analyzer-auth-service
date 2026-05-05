@@ -31,6 +31,7 @@ jobs:
       - name: Create Pull Request to Main
         run: |
           # Check if there are real commits between the release branch and main
+          git fetch origin main
           COMMITS_COUNT=$(git rev-list --count origin/main..HEAD)
 
           if [ "$COMMITS_COUNT" -eq 0 ]; then
