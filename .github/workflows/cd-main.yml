@@ -9,8 +9,15 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: arch-analyzer-auth
+  EKS_CLUSTER_NAME: arch-analyzer-dev
+  K8S_NAMESPACE: auth
+  DEPLOYMENT_NAME: ms-auth-api
+
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -22,36 +29,40 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag, and push image to Amazon ECR
+        id: build-image
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.registry }}
-          ECR_REPOSITORY: ms-auth-api
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Update Kubeconfig
-        run: aws eks update-kubeconfig --name arch-analyzer-cluster --region us-east-1
+        run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
 
-      - name: Deploy to EKS
+      - name: Deploy to EKS via Kustomize
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/MongoDb/ -n auth
-          kubectl apply -f k8s/configmap.yaml -n auth
-          # Note: secrets.yaml should be handled securely, e.g., via Secrets Manager or Sealed Secrets.
-          # For this example, we assume manifests are ready to be applied.
-          kubectl apply -f k8s/deployment.yaml -n auth
-          kubectl apply -f k8s/service.yaml -n auth
-          kubectl apply -f k8s/hpa.yaml -n auth
-          kubectl apply -f k8s/ingress.yaml -n auth
+          cd k8s
+          kustomize edit set image arch-analyzer-auth=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          kubectl apply -k .
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} -n ${{ env.K8S_NAMESPACE }} --timeout=300s
 
-          kubectl rollout status deployment/ms-auth-api -n auth
+      - name: Verify Deployment
+        run: |
+          echo "=== Pods ==="
+          kubectl get pods -n ${{ env.K8S_NAMESPACE }} -l app=${{ env.DEPLOYMENT_NAME }}
+          echo "=== Deploy Summary ==="
+          echo "Image: ${{ steps.build-image.outputs.image }}" >> $GITHUB_STEP_SUMMARY
