@@ -3,20 +3,23 @@ kind: Ingress
 metadata:
   name: auth-ingress
   namespace: auth
+  labels:
+    app.kubernetes.io/name: ms-auth
+    app.kubernetes.io/part-of: arch-analyzer
+    app.kubernetes.io/component: api
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      proxy_set_header X-Forwarded-Prefix /api/auth;
+    nginx.ingress.kubernetes.io/x-forwarded-prefix: /api/auth
 spec:
   ingressClassName: nginx
   rules:
-  - http:
-      paths:
-      - path: /api/auth(/|$)(.*)
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: ms-auth-service
-            port:
-              number: 5002
+    - http:
+        paths:
+          - path: /api/auth(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: ms-auth-service
+                port:
+                  number: 5002
