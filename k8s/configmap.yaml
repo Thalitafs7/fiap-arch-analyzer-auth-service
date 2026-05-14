@@ -3,11 +3,18 @@ kind: ConfigMap
 metadata:
   name: ms-auth-config
   namespace: auth
+  labels:
+    app.kubernetes.io/name: ms-auth
+    app.kubernetes.io/part-of: arch-analyzer
+    app.kubernetes.io/component: api
 data:
+  # Runtime environment
   ASPNETCORE_ENVIRONMENT: "Production"
 
-  # MongoDB
+  # MongoDB — non-sensitive app config only; connection string lives in ms-auth-secret
   MongoDb__DatabaseName: "auth_db"
   MongoDb__ApiKeysCollectionName: "apiKeys"
 
-  Logging__LogLevel__Microsoft.AspNetCore: "Information"
+  # Logging
+  Logging__LogLevel__Default: "Information"
+  Logging__LogLevel__Microsoft.AspNetCore: "Warning"
