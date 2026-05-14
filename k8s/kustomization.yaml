@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: auth
+
+# namespace.yaml is intentionally omitted — the `auth` namespace is
+# bootstrapped by the infra repo (modules/k8s-config) via Terraform.
+resources:
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - hpa.yaml
+  - configmap.yaml
+  - aws-secret-template.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: arch-analyzer
+
+# Image override: the orchestrator (scripts/deploy-all.ps1|sh) substitutes
+# ECR_REGISTRY and IMAGE_TAG before running `kubectl apply -k k8s/`.
+# Example:
+#   kustomize edit set image arch-analyzer-auth=${ECR_REGISTRY}/arch-analyzer-auth:${IMAGE_TAG}
+images:
+  - name: arch-analyzer-auth
+    newName: ${ECR_REGISTRY}/arch-analyzer-auth
+    newTag: ${IMAGE_TAG}

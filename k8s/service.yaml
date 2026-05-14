@@ -3,7 +3,12 @@ kind: Service
 metadata:
   name: ms-auth-service
   namespace: auth
+  labels:
+    app.kubernetes.io/name: ms-auth
+    app.kubernetes.io/part-of: arch-analyzer
+    app.kubernetes.io/component: api
 spec:
+  type: ClusterIP
   selector:
     app: ms-auth-api
   ports:

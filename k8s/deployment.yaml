@@ -4,12 +4,12 @@ metadata:
   name: ms-auth-api
   namespace: auth
   labels:
-    app: ms-auth-api
-    tags.datadoghq.com/env: "production"
-    tags.datadoghq.com/service: "ms-auth-api"
-    tags.datadoghq.com/version: "1.0.0"
+    app.kubernetes.io/name: ms-auth
+    app.kubernetes.io/part-of: arch-analyzer
+    app.kubernetes.io/component: api
 spec:
   replicas: 2
+  revisionHistoryLimit: 5
   selector:
     matchLabels:
       app: ms-auth-api
@@ -17,81 +17,88 @@ spec:
     metadata:
       labels:
         app: ms-auth-api
-        tags.datadoghq.com/env: "production"
-        tags.datadoghq.com/service: "ms-auth-api"
-        tags.datadoghq.com/version: "1.0.0"
-      annotations:
-        admission.datadoghq.com/enabled: "true"
-        admission.datadoghq.com/dotnet-lib.version: "latest"
-        ad.datadoghq.com/ms-auth-api.logs: '[{"source": "csharp", "service": "ms-auth-api"}]'
+        app.kubernetes.io/name: ms-auth
+        app.kubernetes.io/part-of: arch-analyzer
+        app.kubernetes.io/component: api
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10000
+        fsGroup: 10000
+
+      volumes:
+        - name: secrets-vol
+          emptyDir:
+            medium: Memory
+
+      initContainers:
+        - name: secrets-sync
+          image: amazon/aws-cli:2.15.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              SECRET=$(aws secretsmanager get-secret-value \
+                --secret-id arch-analyzer/auth/mongo \
+                --query SecretString \
+                --output text)
+              echo "$SECRET" > /secrets/mongo.json
+          volumeMounts:
+            - name: secrets-vol
+              mountPath: /secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+
       containers:
-      - name: ms-auth-api
-        image: fthalita91/ms-auth:latest
-        ports:
-        - containerPort: 5002
+        - name: ms-auth-api
+          image: arch-analyzer-auth:latest
+          # Image resolved at deploy time via kustomization.yaml images override:
+          #   newName: ${ECR_REGISTRY}/arch-analyzer-auth
+          #   newTag:  ${IMAGE_TAG}
+          ports:
+            - containerPort: 5002
 
-        envFrom:
-          - configMapRef:
-              name: ms-auth-config
-          - secretRef:
-              name: ms-auth-secret
-          - secretRef:
-              name: aws-credentials
-              optional: true
+          envFrom:
+            - configMapRef:
+                name: infra-outputs
+            - configMapRef:
+                name: ms-auth-config
+            - secretRef:
+                name: ms-auth-secret
 
-        env:
-          - name: DD_TRACE_DEBUG
-            value: "true"
-          - name: DD_AGENT_HOST
-            valueFrom:
-              fieldRef:
-                fieldPath: status.hostIP
-          - name: DD_TRACE_AGENT_PORT
-            value: "8126"
-          - name: DD_TRACE_TRANSPORT
-            value: "DatadogTcp"
-          - name: DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED
-            value: "true"
-          - name: DD_TRACE_GENERATION_128_BIT_ENABLED
-            value: "true"
-          - name: DD_LOGS_INJECTION
-            value: "true"
-          - name: DD_ENV
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.labels['tags.datadoghq.com/env']
-          - name: DD_SERVICE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.labels['tags.datadoghq.com/service']
-          - name: DD_VERSION
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.labels['tags.datadoghq.com/version']
-          - name: DD_ENTITY_ID
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.uid
+          volumeMounts:
+            - name: secrets-vol
+              mountPath: /secrets
+              readOnly: true
 
-        resources:
-          requests:
-            cpu: 100m
-            memory: 256Mi
-          limits:
-            cpu: 500m
-            memory: 512Mi
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
 
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 5002
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 5002
-          initialDelaySeconds: 5
-          periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5002
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5002
+            initialDelaySeconds: 5
+            periodSeconds: 5

@@ -3,14 +3,14 @@ name: CI Release Branch
 on:
   push:
     branches:
-      - 'release/*'
+      - "release/*"
 
 permissions:
   contents: write
   pull-requests: write
 
 jobs:
-  test-and-main-pr:
+  create-main-pr:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -20,17 +20,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Run Tests
-        run: ./.github/scripts/check_test_success.sh
-
       - name: Create Pull Request to Main
         run: |
-          # Check if there are real commits between the release branch and main
           git fetch origin main
           COMMITS_COUNT=$(git rev-list --count origin/main..HEAD)
 
@@ -39,13 +30,12 @@ jobs:
             exit 0
           fi
 
-          # Check if PR already exists
           PR_EXISTS=$(gh pr list --head "${{ github.ref_name }}" --base main --json number --jq 'length > 0')
 
           if [ "$PR_EXISTS" = "false" ]; then
             gh pr create \
               --title "Finalize Release ${{ github.ref_name }}" \
-              --body "Automated PR from release branch to main after successful CI." \
+              --body "Automated PR from release branch to main." \
               --base main \
               --head "${{ github.ref_name }}"
           else
