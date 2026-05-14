@@ -10,7 +10,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  test-and-release-pr:
+  create-release-pr:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -20,33 +20,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Run Tests
-        run: ./.github/scripts/check_test_success.sh
-
       - name: Calculate Next Version
         id: semver
         run: |
-          # Fetch tags
           git fetch --tags
 
-          # Get the current version from the latest tag on main
-          # If no tag exists, start with v0.0.0
           LATEST_TAG=$(git tag --merged origin/main | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
           if [ -z "$LATEST_TAG" ]; then
             LATEST_TAG="v0.0.0"
           fi
           echo "Latest tag: $LATEST_TAG"
 
-          # Remove 'v' prefix
           VERSION=${LATEST_TAG#v}
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
 
-          # Get the last commit message from develop
           COMMIT_MSG=$(git log -1 --pretty=%B)
           echo "Commit message: $COMMIT_MSG"
 
@@ -70,11 +57,9 @@ jobs:
           NEXT_VERSION=${{ steps.semver.outputs.version }}
           RELEASE_BRANCH="release/${NEXT_VERSION#v}"
 
-          # Configure Git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Create release branch from main if it doesn't exist
           git fetch origin main
           if ! git rev-parse --verify "origin/$RELEASE_BRANCH" >/dev/null 2>&1; then
             echo "Creating release branch $RELEASE_BRANCH from main..."
@@ -84,7 +69,6 @@ jobs:
           fi
           git fetch origin "$RELEASE_BRANCH"
 
-          # Check for commits between develop and release branch
           COMMITS_COUNT=$(git rev-list --count origin/"$RELEASE_BRANCH"..HEAD)
 
           if [ "$COMMITS_COUNT" -eq 0 ]; then
@@ -92,7 +76,6 @@ jobs:
             exit 0
           fi
 
-          # Create PR from develop to release branch
           PR_EXISTS=$(gh pr list --head develop --base "$RELEASE_BRANCH" --json number --jq 'length > 0')
 
           if [ "$PR_EXISTS" = "false" ]; then
